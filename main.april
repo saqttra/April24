@@ -1,0 +1,18 @@
+fn add (x, y){
+    let result = x + y;
+
+    result
+}
+
+const result = add(10, 4);
+
+let hello = 10;
+
+println(hello)
+
+hello = hello + 30
+
+println(hello)
+
+
+println(result)
