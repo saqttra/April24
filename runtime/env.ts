@@ -1,4 +1,4 @@
-import { RuntimeValue, DEFBOOL, DEFNIL, DEF_FUNC } from "./values.ts";
+import { RuntimeValue, DEFBOOL, DEFNIL, DEF_FUNC, BoolValue, NumberValue } from "./values.ts";
 
 export function setupGlobalEnv(){ // [TS]: we will be able to mutate it since 
                                        // it is a reference, not a copy. 
@@ -12,8 +12,26 @@ export function setupGlobalEnv(){ // [TS]: we will be able to mutate it since
 
 
     //Std-lib functions
+    // prinln v1.0 -> print as TypeScript object
+    // env.declare_var("println", DEF_FUNC((args, scope) => {
+    //     console.log(...args);
+    //     return DEFNIL();
+    // }), true);
+
+    // println v2.0 -> print value
     env.declare_var("println", DEF_FUNC((args, scope) => {
-        console.log(...args);
+        if (args.length > 0) {
+            const arg = args[0];
+            if (arg.type === "number") {
+                const numValue = arg as NumberValue; // Use type assertion here
+                console.log(numValue.value);
+            } else if (arg.type === "bool") {
+                const boolValue = arg as BoolValue; // Use type assertion here
+                console.log(boolValue.value);
+            } else {
+                console.log(arg); // For other types, adjust as necessary
+            }
+        }
         return DEFNIL();
     }), true);
 
