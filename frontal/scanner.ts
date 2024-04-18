@@ -1,4 +1,5 @@
 import { TokenType, Token } from "./token.ts";
+import { IllegalCharErr } from "../error/lexicalError.ts";
 
 declare var Deno: any; // For Deno run environment
 
@@ -12,14 +13,16 @@ const keywords: Record<string, TokenType> = {
 
 export default class Scanner{
     private srcCode: string;
+    private origin : string;
     private scannedTokens : Token[] = [];
     private start: number = 0;
     private currentChar : number = 0;
     private line : number = 1;
-    private column : number = 0;
+    private column : number = 1;
 
-    constructor (srcCode: string){
+    constructor (srcCode: string, origin: string){
         this.srcCode = srcCode;
+        this.origin = origin;
     }
     
     private is_at_eof() : boolean{
@@ -28,6 +31,7 @@ export default class Scanner{
 
     private advance() : string{
         this.currentChar++;
+        this.column++;
         return this.srcCode.charAt(this.currentChar - 1);
     }
 
@@ -87,10 +91,16 @@ export default class Scanner{
         this.scannedTokens.push(new Token(TokenType.IDENTIFIER, this.srcCode.substring(this.start, this.currentChar)));
     }
 
+    private get_line_content(lineNumber: number): string {
+        let startIdx = this.srcCode.lastIndexOf('\n', this.currentChar - 1) + 1;
+        let endIdx = this.srcCode.indexOf('\n', this.currentChar);
+        if (endIdx === -1) endIdx = this.srcCode.length;
+        return this.srcCode.substring(startIdx, endIdx);
+    }
 
     private scan_token() : void{
         let c = this.advance();
-        this.column++;
+        //this.column++;
         switch (c) {
             // Whitespace chars
             case ' ':
@@ -99,7 +109,7 @@ export default class Scanner{
                 break;
             case '\n':
                 this.line++;
-                this.column = 0;
+                this.column = 1;
                 break;
             
             // Single-line comments
@@ -135,7 +145,9 @@ export default class Scanner{
                 }else if(this.is_alpha(c)){
                     this.scan_identifier();
                 }else{
-                    console.error("Err!100");
+                    let lineContent = this.get_line_content(this.line);
+                    const error = new IllegalCharErr(this.origin, this.line, this.column - 1, c, lineContent);
+                    error.printlnError();
                     Deno.exit(100);
                 }
                 break;
@@ -156,6 +168,6 @@ export default class Scanner{
 };
 
 // Test scanner
-//const lexer = new Scanner("let x = 45.2 * (4 / 3)");
+//const lexer = new Scanner(`let x = 45.2 * (4 / 3) ñ`, "programa.april");
 // const lexer = new Scanner("10 - x + y");
 // console.log(lexer.scan_tokens());

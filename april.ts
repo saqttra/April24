@@ -6,7 +6,7 @@ import { setupGlobalEnv } from "./runtime/env.ts";
 declare var Deno: any; // for Deno run environment as our VM.
 
 function repl() : void {
-    const parser = new Parser();
+    const parser = new Parser("repl");
     const env = setupGlobalEnv();
 
     console.log("April-24 v.1.0.0");
@@ -27,7 +27,7 @@ function repl() : void {
 }
 
 async function run(filename : string) {
-    const parser = new Parser();
+    const parser = new Parser(filename);
     const env = setupGlobalEnv();
     
     const srcCode = await Deno.readTextFile(filename);

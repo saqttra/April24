@@ -9,6 +9,11 @@ declare var Deno: any; // For Deno run environment
 // consuming characters, we will consume tokens.
 export default class Parser{
     private scannedTokens: Token[] = [];
+    private origin : string;
+
+    constructor(origin : string){
+        this.origin = origin
+    }
 
     private not_eof() : boolean {
         return this.scannedTokens[0].get_type() != TokenType.END_OF_FILE;
@@ -36,7 +41,7 @@ export default class Parser{
     // Create an AST of type Program
     public grow_ast(srcCode : string) : AST.Program {
 
-        this.scannedTokens = new Scanner(srcCode).scan_tokens();
+        this.scannedTokens = new Scanner(srcCode, this.origin).scan_tokens();
 
         const program : AST.Program = {
             kind : "Program",
