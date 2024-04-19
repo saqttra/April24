@@ -35,10 +35,10 @@ export default class Scanner{
         return this.srcCode.charAt(this.currentChar - 1);
     }
 
-    private add_token(tokType : TokenType, tokValue : string | number | null) : void{
+    private add_token(tokType : TokenType, tokValue : string | number | null, line: number, start: number, end: number) : void{
         // rawSourceCode.substr(start, currentChar - start); -> lexeme
         // this.scannedTokens.push(new Token(tokType, tokValue, this.line, this.column - (this.currentChar - this.start)));
-        this.scannedTokens.push(new Token(tokType, tokValue, this.line, this.column - (this.currentChar - this.start)));
+        this.scannedTokens.push(new Token(tokType, tokValue, line, start, end));
     }
 
     //Looks ahead to the next char, but doesn't consume it
@@ -58,18 +58,24 @@ export default class Scanner{
     }
 
     private scan_number() : void {
-        // Advance as long as we receive digits
-        while(this.is_digit(this.peek())){ this.advance()};
-        
-        //Handle decimal numbers
+        // Registra el inicio del número
+        let start = this.start;
+    
+        // Avanza mientras recibas dígitos
+        while(this.is_digit(this.peek())){ this.advance(); }
+    
+        // Maneja números decimales
         if(this.peek() === '.' && this.is_digit(this.peek_next())){
-            this.advance();
-            while(this.is_digit(this.peek())){this.advance()};
+            this.advance(); // Consume el punto '.'
+            while(this.is_digit(this.peek())){
+                this.advance();
+            }
         }
-
-        let numberValue : number = parseFloat(this.srcCode.substring(this.start, this.currentChar));
-        this.add_token(TokenType.NUMBER, numberValue);
+    
+        let numberValue : number = parseFloat(this.srcCode.substring(start, this.currentChar));
+        this.add_token(TokenType.NUMBER, numberValue, this.line, start, this.currentChar - 1);
     }
+    
 
     private is_alpha(char : string) : boolean{
         return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_';
@@ -79,18 +85,19 @@ export default class Scanner{
         return this.is_alpha(char) || this.is_digit(char);
     }
 
-    private scan_identifier() : void{
+    private scan_identifier() : void {
         while(this.is_alphaNumeric(this.peek())){ this.advance() };
-
-        const reserved = keywords[this.srcCode.substring(this.start, this.currentChar)];
-
-        if(typeof reserved == "number"){
-            this.scannedTokens.push(new Token(reserved, TokenType[reserved], this.line, this.column));
-            //this.scannedTokens.push(new Token(reserved, null));
+    
+        const lexeme = this.srcCode.substring(this.start, this.currentChar);
+        const reserved = keywords[lexeme];
+    
+        if(typeof reserved === "number") {
+            this.scannedTokens.push(new Token(reserved, lexeme, this.line, this.start, this.currentChar - 1));
             return;
         }
-        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, this.srcCode.substring(this.start, this.currentChar), this.line, this.column));
+        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, lexeme, this.line, this.start, this.currentChar - 1));
     }
+    
 
     private get_line_content(lineNumber: number): string {
         let startIdx = this.srcCode.lastIndexOf('\n', this.currentChar - 1) + 1;
@@ -122,18 +129,18 @@ export default class Scanner{
 
             // Single char tokens
             // this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '(': this.add_token(TokenType.LEFT_PAREN, c); break;
-            case ')': this.add_token(TokenType.RIGHT_PAREN, c); break;
-            case '{': this.add_token(TokenType.LEFT_BRACE, c); break;
-            case '}': this.add_token(TokenType.RIGHT_BRACE, c); break;
-            case ',': this.add_token(TokenType.COMMA, c); break;
-            case '=': this.add_token(TokenType.EQUAL, c); break;
-            case ';': this.add_token(TokenType.SEMICOLON, c); break;
+            case '(': this.add_token(TokenType.LEFT_PAREN, c, this.line, this.start, this.currentChar - 1); break;
+            case ')': this.add_token(TokenType.RIGHT_PAREN, c, this.line, this.start, this.currentChar - 1); break;
+            case '{': this.add_token(TokenType.LEFT_BRACE, c, this.line, this.start, this.currentChar - 1); break;
+            case '}': this.add_token(TokenType.RIGHT_BRACE, c, this.line, this.start, this.currentChar - 1); break;
+            case ',': this.add_token(TokenType.COMMA, c, this.line, this.start, this.currentChar - 1); break;
+            case '=': this.add_token(TokenType.EQUAL, c, this.line, this.start, this.currentChar - 1); break;
+            case ';': this.add_token(TokenType.SEMICOLON, c, this.line, this.start, this.currentChar - 1); break;
             case '-': 
             case '+':
             case '/':
             case '*': 
-            case '%': this.add_token(TokenType.BINARY_OP, c); break;
+            case '%': this.add_token(TokenType.BINARY_OP, c, this.line, this.start, this.currentChar - 1); break;
             
 
             default:
@@ -159,7 +166,7 @@ export default class Scanner{
             this.scan_token();
         }
         
-        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null, this.line, this.column));
+        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null, this.line, this.currentChar, this.currentChar));
         return this.scannedTokens;
     }
 

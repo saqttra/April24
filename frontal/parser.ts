@@ -50,7 +50,7 @@ export default class Parser{
                                         expectedTok: string ) => BaseError) {
         const prevToken = this.scannedTokens.shift() as Token;
         if (!prevToken || prevToken.get_type() != type) {
-            const error = new ErrorClass(this.origin, prevToken.get_line(), prevToken.get_column(), prevToken, TokenType[type]);
+            const error = new ErrorClass(this.origin, prevToken.get_line(), prevToken.get_end(), prevToken, TokenType[type]);
             error.printlnError();
             Deno.exit(1);
         }
@@ -62,7 +62,7 @@ export default class Parser{
 
         // Pour tokens from scanner into parser
         this.scannedTokens = new Scanner(srcCode, this.origin).scan_tokens();
-        //console.log(this.scannedTokens);
+        console.log(this.scannedTokens);
 
         // <Program> ::= <Statement>*
         const program : AST.Program = {
