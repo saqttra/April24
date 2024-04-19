@@ -3,7 +3,6 @@
 */
 
 import * as AST from "./ast.ts";
-import { Property } from "./ast.ts";
 import  Scanner  from "./scanner.ts";
 import { TokenType, Token } from "./token.ts";
 import BaseError from "../error/baseError.ts";
@@ -82,9 +81,8 @@ export default class Parser{
 
     // The further down in the call STACK, the more precedense it has.
     private parse_statement() : AST.Statement{
-        //return this.parse_expression();
 
-        // <Statement> ::= <VarDeclaration> | <FuncDeclaration> | <Expr>
+        // <Statement> ::= <FuncDeclaration> | <VarDeclaration> | <Expr>
         switch(this.at().get_type()){ // curr available token
             case TokenType.LET:
             case TokenType.CONST:
@@ -96,7 +94,7 @@ export default class Parser{
         }
     }
 
-    // <FuncDeclaration> ::= FN IDENTIFIER LEFT_PAREN <ParamList>? RIGHT_PAREN <Block>
+    // <FuncDeclaration> ::= FN <Identifier> LEFT_PAREN (<Identifier> (COMMA <Identifier>)*)? RIGHT_PAREN  LEFT_BRACE <Statement>* RIGHT_BRACE
     private parse_fn_declaration() : AST.Statement {
         this.advance(); // consume 'fn' keyword
         const name = this.expect(
@@ -137,7 +135,8 @@ export default class Parser{
         return fn;
     }
 
-    // <VarDeclaration> ::= (LET | CONST) IDENTIFIER (EQUAL <Expr>)? SEMICOLON
+    // <VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
+
     // Mutable or immutable: CONST vs LET
     parse_var_declaration(): AST.Statement {
         const isConst = this.advance().get_type() == TokenType.CONST;
@@ -183,54 +182,21 @@ export default class Parser{
 
     }
 
-    // <AssignmentExpr> ::= <MemberExpr> EQUAL <Expr> | <MemberExpr>
+    // <AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
     private parse_assignment_expr(): AST.Expr {
-        const left = this.parse_object_expr();
+        //const left = this.parse_object_expr();
 
+        const left = this.parse_additive_expr();  // Modificación sugerida
         // <MemberExpr> EQUAL <Expr>
         if(this.at().get_type() == TokenType.EQUAL){
             this.advance(); // pass the '=';
             const value = this.parse_assignment_expr();
             return {value, assigne: left, kind: "AssignmentExpr"} as AST.AssignmentExpr;
         }
-        return left; // <MemberExpr>
-    }
-    private parse_object_expr() : AST.Expr {
-        if (this.at().get_type() !== TokenType.LEFT_BRACE){
-            return this.parse_additive_expr();
-        }
-
-        this.advance(); // consume '{'
-        const properties = new Array<Property>();
-
-        while(this.not_eof() && this.at().get_type() !== TokenType.RIGHT_BRACE){
-            // {key: value, key2: value}
-            const key = this.expect(TokenType.IDENTIFIER, "Object literal key expected").get_value();
-           
-            // {key, }
-            if(this.at().get_type() == TokenType.COMMA){
-                this.advance(); // consume ','
-                properties.push({key, kind: "Property"} as Property);
-                continue;
-            }else if(this.at().get_type() == TokenType.RIGHT_BRACE){
-                properties.push({key, kind: "Property"} as Property);
-                continue;
-            }
-
-            this.expect(TokenType.COLON, "Missing colon following identifier in ObjectExpr");
-            const value = this.parse_expression();
-
-            properties.push({kind: "Property", value, key} as Property);
-            if(this.at().get_type() != TokenType.RIGHT_BRACE){
-                this.expect(TokenType.COMMA, 
-                            "Expected comma or closing brace following property.");
-            }
-
-        }
-        this.expect(TokenType.RIGHT_BRACE, "Object literal missing closing brace.");
-        return {kind: "ObjectLiteral", properties} as AST.ObjectLiteral;
+        return left; 
     }
 
+    // <AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
     private parse_additive_expr() : AST.Expr {
         let left = this.parse_multiplicative_expr();
 
@@ -248,6 +214,7 @@ export default class Parser{
         return left;
     }
 
+    // <MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
     private parse_multiplicative_expr() : AST.Expr {
         let left = this.parse_call_member_expr();
 
@@ -265,7 +232,7 @@ export default class Parser{
         return left;
     }
 
-    // foo.x ()
+    // <CallMemberExpr> ::= <MemberExpr> | <CallExpr>
     private parse_call_member_expr() : AST.Expr {
         const member = this.parse_member_expr();
 
@@ -276,6 +243,7 @@ export default class Parser{
         return member;
     }
 
+    // <CallExpr> ::= <Expr> LEFT_PAREN <Args>? RIGHT_PAREN
     private parse_call_expr(caller : AST.Expr) : AST.Expr {
         let call_expr: AST.Expr = {
             kind: "CallExpr",
@@ -290,6 +258,7 @@ export default class Parser{
         return call_expr;
     }
 
+    //<Args> ::= <Expr> (COMMA <Expr>)*
     // Args are just expressions (separated by commas)
     private parse_args() : AST.Expr[]{
         this.expect(TokenType.LEFT_PAREN, "Expected '('");
@@ -312,48 +281,21 @@ export default class Parser{
 
         return args;
     }
-
-    // <MemberExpr> ::= <PrimaryExpr> (DOT IDENTIFIER | LEFT_BRACK <Expr> RIGHT_BRACK)*
-    private parse_member_expr(): AST.Expr{
-        let object = this.parse_primary_expr();
-
-        while(this.at().get_type() == TokenType.DOT || this.at().get_type() == TokenType.LEFT_BRACK){
-            const operator = this.advance();
-            let property: AST.Expr;
-            let computed: boolean;
-
-            //non-computed values obj.expr
-            if(operator.get_type() == TokenType.DOT){
-                computed = false;
-
-                // get identifier
-                property = this.parse_primary_expr();
-                if(property.kind != "Identifier"){
-                    throw `Cannot use '.' operator without right side being an identifier.`;
-                }
-            } else{
-                computed = true;
-                property = this.parse_expression();
-                this.expect(TokenType.RIGHT_BRACK, "Missing closing bracket in computed value.");
-            }
-            object = {
-                kind: "MemberExpr",
-                object,
-                property, 
-                computed,
-            } as AST.MemberExpr;
-        
-        }
-        return object;
+    
+    // <MemberExpr> ::= <PrimaryExpr>
+    private parse_member_expr(): AST.Expr {
+        return this.parse_primary_expr();
     }
 
 
+
     // A primary expression has the HIGHEST order of precedence
-    // <PrimaryExpr> ::= IDENTIFIER | NUMBER | LEFT_PAREN <Expr> RIGHT_PAREN
+    // <PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
     private parse_primary_expr() : AST.Expr{
         const token = this.at().get_type();
 
         switch(token){
+            // <Identifier> ::= IDENTIFIER
             case TokenType.IDENTIFIER:
                                              // to avoid infinite loop, the tokens must be consumed
                                              //                                     ___________|
@@ -364,6 +306,7 @@ export default class Parser{
             //     this.advance(); // consume the null keyword
             //     return {kind: "NilLiteral", value: "nil"} as AST.NilLiteral;
 
+            // <NumericLiteral> ::= NUMBER
             case TokenType.NUMBER:
                                             // Already converted to float since scanning; check scanner.ts;
                 return {kind: "NumericLiteral", value: this.advance().get_value()} as AST.NumericLiteral;

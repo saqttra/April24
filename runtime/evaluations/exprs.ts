@@ -1,4 +1,4 @@
-import { AssignmentExpr, BinaryExpr, Identifier, ObjectLiteral, CallExpr } from "../../frontal/ast.ts";
+import { AssignmentExpr, BinaryExpr, Identifier, CallExpr } from "../../frontal/ast.ts";
 import Environment from "../env.ts";
 import { evaluate } from "../interpreter.ts";
 import { NumberValue, RuntimeValue, NilValue, ObjectValue, DEFNIL, StdFunc, FunctionVal } from "../values.ts";
@@ -51,23 +51,6 @@ export function eval_assignment(node: AssignmentExpr, env : Environment) : Runti
 
     const varname = (node.assigne as Identifier).symbol;
     return env.assign_var(varname, evaluate(node.value, env));
-}
-
-export function eval_object_expr(
-    obj: ObjectLiteral, 
-    env : Environment
-  ) : RuntimeValue{
-    const object = {type: "object", properties: new Map()} as ObjectValue;
-
-    for(const {key, value} of obj.properties){
-        const runtimeVal = (value == undefined) 
-          ? env.lookup_var(key) : evaluate(value, env); 
-        
-        object.properties.set(key, runtimeVal);
-    }
-    
-    return object;
-
 }
 
 export function eval_call_expr(

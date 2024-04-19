@@ -1,58 +1,29 @@
-
-
-
-
-
-
-
-<BinaryExpr> ::= <Expr> BINARY_OP <Expr>
-
-<CallExpr> ::= <MemberExpr> LEFT_PAREN <ExprList>? RIGHT_PAREN
-
-<ObjectLiteral> ::= LEFT_BRACE <PropertyList>? RIGHT_BRACE
-<Property> ::= IDENTIFIER COLON <Expr>
-<PropertyList> ::= <Property> (COMMA <Property>)*
-
-<PrimaryExpr> ::= IDENTIFIER | NUMBER | LEFT_PAREN <Expr> RIGHT_PAREN | <ObjectLiteral>
-
-<ExprList> ::= <Expr> (COMMA <Expr>)*
-<ParamList> ::= IDENTIFIER (COMMA IDENTIFIER)*
-<Block> ::= LEFT_BRACE <Statement>* RIGHT_BRACE
-
-
+''''''
 
 <Program> ::= <Statement>*
 
 <Statement> ::= <VarDeclaration> | <FuncDeclaration> | <Expr>
 
-<VarDeclaration> ::= (LET | CONST) IDENTIFIER (EQUAL <Expr>)? SEMICOLON
+<VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
 
-<FuncDeclaration> ::= FN IDENTIFIER LEFT_PAREN <ParamList>? RIGHT_PAREN <Block>
+<FuncDeclaration> ::= FN <Identifier> LEFT_PAREN (<Identifier> (COMMA <Identifier>)*)? RIGHT_PAREN <Block>
+
+<Block> ::= LEFT_BRACE <Statement>* RIGHT_BRACE
 
 <Expr> ::= <AssignmentExpr>
-<AssignmentExpr> ::= <MemberExpr> EQUAL <Expr> | <MemberExpr>
-<MemberExpr> ::= <PrimaryExpr> (DOT IDENTIFIER | LEFT_BRACK <Expr> RIGHT_BRACK)*
 
-<BinaryExpr> ::= <Expr> BINARY_OP <Expr>
+<AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
 
-<CallExpr> ::= <MemberExpr> LEFT_PAREN <ExprList>? RIGHT_PAREN
+<AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
 
-<ObjectLiteral> ::= LEFT_BRACE <PropertyList>? RIGHT_BRACE
-<Property> ::= IDENTIFIER COLON <Expr>
-<PropertyList> ::= <Property> (COMMA <Property>)*
+<MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
 
-<PrimaryExpr> ::= IDENTIFIER | NUMBER | LEFT_PAREN <Expr> RIGHT_PAREN | <ObjectLiteral>
+<CallMemberExpr> ::= <MemberExpr> | <CallExpr>
 
-<ExprList> ::= <Expr> (COMMA <Expr>)*
-<ParamList> ::= IDENTIFIER (COMMA IDENTIFIER)*
-<Block> ::= LEFT_BRACE <Statement>* RIGHT_BRACE
+<CallExpr> ::= <Expr> LEFT_PAREN <Args>? RIGHT_PAREN
 
+<MemberExpr> ::= <PrimaryExpr>
 
-FINAL GRAMMAR 
-----------------------------------------------------------------
+<PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
 
-<Program> ::= <Statement>*
-
-<Statement> ::= <VarDeclaration> | <FuncDeclaration> | <Expr>
-
-<PrimaryExpr> ::= IDENTIFIER | NUMBER | LEFT_PAREN <Expr> RIGHT_PAREN 
+<Args> ::= <Expr> (COMMA <Expr>)*

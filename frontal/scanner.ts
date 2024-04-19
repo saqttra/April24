@@ -125,11 +125,7 @@ export default class Scanner{
             case ')': this.add_token(TokenType.RIGHT_PAREN, this.srcCode.substring(this.start, this.currentChar)); break;
             case '{': this.add_token(TokenType.LEFT_BRACE, this.srcCode.substring(this.start, this.currentChar)); break;
             case '}': this.add_token(TokenType.RIGHT_BRACE, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '[': this.add_token(TokenType.LEFT_BRACK, this.srcCode.substring(this.start, this.currentChar)); break;
-            case ']': this.add_token(TokenType.RIGHT_BRACK, this.srcCode.substring(this.start, this.currentChar)); break;            
             case ',': this.add_token(TokenType.COMMA, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '.': this.add_token(TokenType.DOT, this.srcCode.substring(this.start, this.currentChar)); break;    
-            case ':': this.add_token(TokenType.COLON, this.srcCode.substring(this.start, this.currentChar)); break;
             case '=': this.add_token(TokenType.EQUAL, this.srcCode.substring(this.start, this.currentChar)); break;
             case ';': this.add_token(TokenType.SEMICOLON, this.srcCode.substring(this.start, this.currentChar)); break;
             case '-': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;

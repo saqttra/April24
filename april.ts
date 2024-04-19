@@ -42,3 +42,5 @@ async function run(filename : string) {
 //repl();
 
 run("main.april");
+
+// Note: v.1.2.1 last version to support JS object literal 

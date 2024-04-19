@@ -14,7 +14,7 @@ export type NodeType =
 | "CallExpr"
 
 // Literals: direct values in the src code
-| "ObjectLiteral" // {key: value}
+//| "ObjectLiteral" // {key: value}
 | "Property" // A proerty inside an object literal
 | "NumericLiteral" // 123
 //| "NilLiteral"
@@ -118,17 +118,6 @@ export interface Identifier extends Expr{
 export interface NumericLiteral extends Expr{
     kind : "NumericLiteral";
     value: number;
-}
-
-export interface Property extends Expr{
-    kind : "Property";
-    key: string;
-    value?: Expr;
-}
-
-export interface ObjectLiteral extends Expr{
-    kind : "ObjectLiteral";
-    properties: Property[];
 }
 
 /*

@@ -1,8 +1,8 @@
 import { ValueType, RuntimeValue, NumberValue, NilValue } from "./values.ts";
-import { NodeType, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, Program, VarDeclaration, ObjectLiteral, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
+import { NodeType, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, Program, VarDeclaration, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
 import Environment from "./env.ts";
 import { eval_program, eval_var_declaration, eval_func_declaration } from "./evaluations/stmnts.ts";
-import { eval_identifier, eval_binexp, eval_assignment, eval_object_expr, eval_call_expr } from "./evaluations/exprs.ts";
+import { eval_identifier, eval_binexp, eval_assignment, eval_call_expr } from "./evaluations/exprs.ts";
 
 declare var Deno : any; 
 
@@ -35,8 +35,8 @@ export function evaluate(astNode: Statement, env : Environment): RuntimeValue{
         case "Identifier":
             return eval_identifier(astNode as Identifier, env);
         
-        case "ObjectLiteral":
-            return eval_object_expr(astNode as ObjectLiteral, env);
+        // case "ObjectLiteral":
+        //     return eval_object_expr(astNode as ObjectLiteral, env);
         
         case "CallExpr":
                 return eval_call_expr(astNode as CallExpr, env);
