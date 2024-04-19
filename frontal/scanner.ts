@@ -37,7 +37,8 @@ export default class Scanner{
 
     private add_token(tokType : TokenType, tokValue : string | number | null) : void{
         // rawSourceCode.substr(start, currentChar - start); -> lexeme
-        this.scannedTokens.push(new Token(tokType, tokValue));
+        // this.scannedTokens.push(new Token(tokType, tokValue, this.line, this.column - (this.currentChar - this.start)));
+        this.scannedTokens.push(new Token(tokType, tokValue, this.line, this.column - (this.currentChar - this.start)));
     }
 
     //Looks ahead to the next char, but doesn't consume it
@@ -84,11 +85,11 @@ export default class Scanner{
         const reserved = keywords[this.srcCode.substring(this.start, this.currentChar)];
 
         if(typeof reserved == "number"){
-            this.scannedTokens.push(new Token(reserved, TokenType[reserved]));
+            this.scannedTokens.push(new Token(reserved, TokenType[reserved], this.line, this.column));
             //this.scannedTokens.push(new Token(reserved, null));
             return;
         }
-        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, this.srcCode.substring(this.start, this.currentChar)));
+        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, this.srcCode.substring(this.start, this.currentChar), this.line, this.column));
     }
 
     private get_line_content(lineNumber: number): string {
@@ -161,13 +162,13 @@ export default class Scanner{
             this.scan_token();
         }
         
-        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null));
+        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null, this.line, this.column));
         return this.scannedTokens;
     }
 
 };
 
 // Test scanner
-//const lexer = new Scanner(`let x = 45.2 * (4 / 3) ñ`, "programa.april");
+//const lexer = new Scanner(`let x = 45.2 * (4 / 3)`, "programa.april");
 // const lexer = new Scanner("10 - x + y");
-// console.log(lexer.scan_tokens());
+//console.log(lexer.scan_tokens());

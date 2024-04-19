@@ -1,26 +1,29 @@
+/*
+    AST node types that represent the language's constructions
+*/
 
 export type NodeType =
-// Statements
-| "Program" 
+// Statements: declarations & control flow structures
+| "Program" // Complete program
 | "VarDeclaration"
 | "FuncDeclaration"
 
-// Expressions
+// Expressions: they produce a value
 | "AssignmentExpr"
-| "MemberExpr"
+| "MemberExpr" // Access and object's member: 'object.property'
 | "CallExpr"
 
-// Literals
-| "ObjectLiteral"
-| "Property"
-| "NumericLiteral"
+// Literals: direct values in the src code
+| "ObjectLiteral" // {key: value}
+| "Property" // A proerty inside an object literal
+| "NumericLiteral" // 123
 //| "NilLiteral"
-| "Identifier" 
-| "BinaryExpr";
+| "Identifier" // vars, consts, funcs
+| "BinaryExpr"; // involves operators: +, -, *, /, %
 
 
 /*
-    Base for all statements and expressions (contructs) of the language.
+    Base for all statements and expressions (constructions) of the language.
     Serves as the "abstract type" (polymorphic).
 
     Statements don't return a value (in this lang)
@@ -33,32 +36,34 @@ export type NodeType =
 
 */
 export interface Statement{ 
-    kind : NodeType;
+    kind : NodeType; // Specifies the node it represents
 }
 
 /*
     A program is a list of every single statement
     in the src file. One object for each construct
     in the language.
+
+    Program: list of statements
 */
 export interface Program extends Statement{
     kind : "Program";
     body : Statement[]
-
 }
 
 export interface VarDeclaration extends Statement{
     kind: "VarDeclaration";
     constant: boolean;
     identifier: string;
-    value?: Expr;
+    value?: Expr; // value assigned to the var,
+                  // it's optional so it can handle: let myvar;
 }
 
 export interface FuncDeclaration extends Statement{
     kind: "FuncDeclaration";
     parameters: string[];
     name: string;
-    body: Statement[];
+    body: Statement[]; // list of statements
 }
 
 export interface Expr extends Statement{
@@ -94,8 +99,8 @@ export interface BinaryExpr extends Expr {
 
 export interface CallExpr extends Expr {
     kind: "CallExpr";
-    args: Expr[];
-    caller: Expr;
+    args: Expr[]; // args passed to the function
+    caller: Expr; // expression called
 }
 
 export interface MemberExpr extends Expr {

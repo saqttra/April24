@@ -41,4 +41,4 @@ async function run(filename : string) {
 
 //repl();
 
-run("./main.april");
+run("main.april");

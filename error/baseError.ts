@@ -1,7 +1,7 @@
 export default class BaseError {
     private errorCode: number;
     private errorType: string;
-    private errorDscrptn: string;
+    protected errorDscrptn: string;
     private errorSrc: string;
     private line: number;
     private column: number;

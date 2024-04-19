@@ -28,19 +28,26 @@ export enum TokenType{
 export class Token{
     private value: string | number | null;
     private type : TokenType;
+    private line: number;
+    private column: number;
 
-    constructor(type : TokenType, value : string | number | null){
+    constructor(type : TokenType, 
+                value : string | number | null,
+                line : number,
+                column : number){
         this.type = type;
         this.value = value;
+        this.line = line;
+        this.column = column;
     }
 
-    get_value() : string | number | null{
-        return this.value;
-    }
+    get_value() : string | number | null{ return this.value; }
 
-    get_type() : TokenType{
-        return this.type;
-    }
+    get_type() : TokenType{ return this.type; }
+
+    get_line() : number{ return this.line; }
+
+    get_column() : number{ return this.column; }
 }
 
 // Test token

@@ -1,11 +1,17 @@
+/*
+    Recursive descent parser (top-down)
+*/
+
 import * as AST from "./ast.ts";
 import { Property } from "./ast.ts";
 import  Scanner  from "./scanner.ts";
 import { TokenType, Token } from "./token.ts";
+import BaseError from "../error/baseError.ts";
+import { MissingSemicolonErr, InvalidVarDeclErr } from "../error/syntaxError.ts";
 
 declare var Deno: any; // For Deno run environment
 
-// The Parser is actually kinda similar to the Scanner, but instead of
+// The Parser is kinda similar to the Scanner, but instead of
 // consuming characters, we will consume tokens.
 export default class Parser{
     private scannedTokens: Token[] = [];
@@ -34,22 +40,39 @@ export default class Parser{
             console.error("Parser error:\n" + err, prevToken, " - Expecting: ", type);
             Deno.exit(1);
         }
+        return prevToken;
+    }
 
+    private neo_expect(type: TokenType, 
+                       ErrorClass: new (errorSrc: string, 
+                                        line: number, 
+                                        column: number, 
+                                        receivedTok: Token, 
+                                        expectedTok: string ) => BaseError) {
+        const prevToken = this.scannedTokens.shift() as Token;
+        if (!prevToken || prevToken.get_type() != type) {
+            const error = new ErrorClass(this.origin, prevToken.get_line(), prevToken.get_column(), prevToken, TokenType[type]);
+            error.printlnError();
+            Deno.exit(1);
+        }
         return prevToken;
     }
 
     // Create an AST of type Program
     public grow_ast(srcCode : string) : AST.Program {
 
+        // Pour tokens from scanner into parser
         this.scannedTokens = new Scanner(srcCode, this.origin).scan_tokens();
+        //console.log(this.scannedTokens);
 
+        // <Program> ::= <Statement>*
         const program : AST.Program = {
             kind : "Program",
-            body: [], // Each element in the body is going to be a list of statements
+            body: [], // Each element in the body is going to be a statement
 
         };
 
-        // Parsing process 'til the EOF.
+        // Parsing process 'til not hitting the EOF token
         while(this.not_eof()){
             program.body.push(this.parse_statement());
         }
@@ -61,6 +84,7 @@ export default class Parser{
     private parse_statement() : AST.Statement{
         //return this.parse_expression();
 
+        // <Statement> ::= <VarDeclaration> | <FuncDeclaration> | <Expr>
         switch(this.at().get_type()){ // curr available token
             case TokenType.LET:
             case TokenType.CONST:
@@ -72,6 +96,7 @@ export default class Parser{
         }
     }
 
+    // <FuncDeclaration> ::= FN IDENTIFIER LEFT_PAREN <ParamList>? RIGHT_PAREN <Block>
     private parse_fn_declaration() : AST.Statement {
         this.advance(); // consume 'fn' keyword
         const name = this.expect(
@@ -112,12 +137,15 @@ export default class Parser{
         return fn;
     }
 
+    // <VarDeclaration> ::= (LET | CONST) IDENTIFIER (EQUAL <Expr>)? SEMICOLON
     // Mutable or immutable: CONST vs LET
     parse_var_declaration(): AST.Statement {
         const isConst = this.advance().get_type() == TokenType.CONST;
-        const identifier = this.expect(
-            TokenType.IDENTIFIER,
-            "Expected identifier name followed by let or const keywords.", 
+
+        // Ex: let 20 = 10 --> trigger error
+        const identifier = this.neo_expect(
+            TokenType.IDENTIFIER, 
+            InvalidVarDeclErr
         ).get_value();
         
         // let var; --> OK;  const var; --> NO!
@@ -140,28 +168,32 @@ export default class Parser{
             identifier,
             constant: isConst,
         } as AST.VarDeclaration;
-
-        this.expect(
-            TokenType.SEMICOLON, 
-            "Var declaration missing ';' at the end."
+        // Ex: let mivar = 10 --> trigger error
+        this.neo_expect(
+            TokenType.SEMICOLON, MissingSemicolonErr
         );
         return declaration;
     }
 
+
+    // <Expr> ::= <AssignmentExpr>
     private parse_expression() : AST.Expr { // This works because Expr inherits from Statement
         // Expr is a Statement, but not the other way around
         return this.parse_assignment_expr();
 
     }
+
+    // <AssignmentExpr> ::= <MemberExpr> EQUAL <Expr> | <MemberExpr>
     private parse_assignment_expr(): AST.Expr {
         const left = this.parse_object_expr();
 
+        // <MemberExpr> EQUAL <Expr>
         if(this.at().get_type() == TokenType.EQUAL){
             this.advance(); // pass the '=';
             const value = this.parse_assignment_expr();
             return {value, assigne: left, kind: "AssignmentExpr"} as AST.AssignmentExpr;
         }
-        return left;
+        return left; // <MemberExpr>
     }
     private parse_object_expr() : AST.Expr {
         if (this.at().get_type() !== TokenType.LEFT_BRACE){
@@ -281,6 +313,7 @@ export default class Parser{
         return args;
     }
 
+    // <MemberExpr> ::= <PrimaryExpr> (DOT IDENTIFIER | LEFT_BRACK <Expr> RIGHT_BRACK)*
     private parse_member_expr(): AST.Expr{
         let object = this.parse_primary_expr();
 
@@ -316,6 +349,7 @@ export default class Parser{
 
 
     // A primary expression has the HIGHEST order of precedence
+    // <PrimaryExpr> ::= IDENTIFIER | NUMBER | LEFT_PAREN <Expr> RIGHT_PAREN
     private parse_primary_expr() : AST.Expr{
         const token = this.at().get_type();
 
