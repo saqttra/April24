@@ -1,29 +1,28 @@
-''''''
-
 <Program> ::= <Statement>*
 
-<Statement> ::= <VarDeclaration> | <FuncDeclaration> | <Expr>
+<Statement> ::= <FuncDeclaration> | <VarDeclaration> | <Expr>
 
-<VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
+<FuncDeclaration> ::= "FN" <Identifier> "(" <ParamList>? ")" "{" <Statement>* "}"
+<ParamList> ::= <Identifier> ("," <Identifier>)*
 
-<FuncDeclaration> ::= FN <Identifier> LEFT_PAREN (<Identifier> (COMMA <Identifier>)*)? RIGHT_PAREN <Block>
-
-<Block> ::= LEFT_BRACE <Statement>* RIGHT_BRACE
+<VarDeclaration> ::= ("LET" | "CONST") <Identifier> ("=" <Expr>)? ";"
 
 <Expr> ::= <AssignmentExpr>
 
-<AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
+<AssignmentExpr> ::= <AdditiveExpr> ("=" <Expr>)?
 
-<AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
+<AdditiveExpr> ::= <MultiplicativeExpr> (("+" | "-" | "%") <MultiplicativeExpr>)*
 
-<MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
+<MultiplicativeExpr> ::= <CallMemberExpr> (("*" | "/") <CallMemberExpr>)*
 
 <CallMemberExpr> ::= <MemberExpr> | <CallExpr>
 
-<CallExpr> ::= <Expr> LEFT_PAREN <Args>? RIGHT_PAREN
+<CallExpr> ::= <Expr> "(" <Args>? ")"
 
 <MemberExpr> ::= <PrimaryExpr>
 
-<PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
+<PrimaryExpr> ::= <Identifier> | <NumericLiteral> | "(" <Expr> ")"
 
-<Args> ::= <Expr> (COMMA <Expr>)*
+<Args> ::= "(" <ArgsList> ")"
+
+<ArgsList> ::= <Expr> ("," <Expr>)*

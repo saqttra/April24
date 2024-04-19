@@ -121,18 +121,19 @@ export default class Scanner{
                 break;
 
             // Single char tokens
-            case '(': this.add_token(TokenType.LEFT_PAREN, this.srcCode.substring(this.start, this.currentChar)); break;
-            case ')': this.add_token(TokenType.RIGHT_PAREN, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '{': this.add_token(TokenType.LEFT_BRACE, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '}': this.add_token(TokenType.RIGHT_BRACE, this.srcCode.substring(this.start, this.currentChar)); break;
-            case ',': this.add_token(TokenType.COMMA, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '=': this.add_token(TokenType.EQUAL, this.srcCode.substring(this.start, this.currentChar)); break;
-            case ';': this.add_token(TokenType.SEMICOLON, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '-': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '+': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '/': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '*': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '%': this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
+            // this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
+            case '(': this.add_token(TokenType.LEFT_PAREN, c); break;
+            case ')': this.add_token(TokenType.RIGHT_PAREN, c); break;
+            case '{': this.add_token(TokenType.LEFT_BRACE, c); break;
+            case '}': this.add_token(TokenType.RIGHT_BRACE, c); break;
+            case ',': this.add_token(TokenType.COMMA, c); break;
+            case '=': this.add_token(TokenType.EQUAL, c); break;
+            case ';': this.add_token(TokenType.SEMICOLON, c); break;
+            case '-': 
+            case '+':
+            case '/':
+            case '*': 
+            case '%': this.add_token(TokenType.BINARY_OP, c); break;
             
 
             default:
