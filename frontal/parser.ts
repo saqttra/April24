@@ -94,7 +94,14 @@ export default class Parser{
         }
     }
 
-    // <FuncDeclaration> ::= FN <Identifier> LEFT_PAREN (<Identifier> (COMMA <Identifier>)*)? RIGHT_PAREN  LEFT_BRACE <Statement>* RIGHT_BRACE
+/*
+    <FuncDeclaration>::= 
+    
+    FN <Identifier> LEFT_PAREN (<Identifier> (COMMA <Identifier>)*)? RIGHT_PAREN  LEFT_BRACE 
+        <Statement>* 
+    RIGHT_BRACE
+    
+*/
     private parse_fn_declaration() : AST.Statement {
         this.advance(); // consume 'fn' keyword
         const name = this.expect(
@@ -135,9 +142,7 @@ export default class Parser{
         return fn;
     }
 
-    // <VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
-
-    // Mutable or immutable: CONST vs LET
+// <VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
     parse_var_declaration(): AST.Statement {
         const isConst = this.advance().get_type() == TokenType.CONST;
 
@@ -175,14 +180,16 @@ export default class Parser{
     }
 
 
-    // <Expr> ::= <AssignmentExpr>
+// <Expr> ::= <AssignmentExpr>
+// Entry point for parsing expressions
     private parse_expression() : AST.Expr { // This works because Expr inherits from Statement
         // Expr is a Statement, but not the other way around
         return this.parse_assignment_expr();
 
     }
 
-    // <AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
+// <AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
+// Parses an assignment expression, which might just be an additive expression without an assignment.
     private parse_assignment_expr(): AST.Expr {
         //const left = this.parse_object_expr();
 
@@ -196,7 +203,11 @@ export default class Parser{
         return left; 
     }
 
-    // <AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
+/*
+    <AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
+    Parses additive expressions, which consist of terms separated by plus, minus, or modulus operators.
+
+*/    
     private parse_additive_expr() : AST.Expr {
         let left = this.parse_multiplicative_expr();
 
@@ -214,7 +225,12 @@ export default class Parser{
         return left;
     }
 
-    // <MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
+
+/*
+    <MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
+    Parses multiplicative expressions, which consist of factors separated by 
+    multiplication or division operators.
+*/
     private parse_multiplicative_expr() : AST.Expr {
         let left = this.parse_call_member_expr();
 
@@ -232,7 +248,8 @@ export default class Parser{
         return left;
     }
 
-    // <CallMemberExpr> ::= <MemberExpr> | <CallExpr>
+// <CallMemberExpr> ::= <MemberExpr> | <CallExpr>
+// Determines whether to parse a member expression or a function call expression.
     private parse_call_member_expr() : AST.Expr {
         const member = this.parse_member_expr();
 
@@ -243,7 +260,8 @@ export default class Parser{
         return member;
     }
 
-    // <CallExpr> ::= <Expr> LEFT_PAREN <Args>? RIGHT_PAREN
+// <CallExpr> ::= <Expr> LEFT_PAREN <Args>? RIGHT_PAREN
+// Parses a function call, including the caller and any arguments.
     private parse_call_expr(caller : AST.Expr) : AST.Expr {
         let call_expr: AST.Expr = {
             kind: "CallExpr",
@@ -258,8 +276,9 @@ export default class Parser{
         return call_expr;
     }
 
-    //<Args> ::= <Expr> (COMMA <Expr>)*
-    // Args are just expressions (separated by commas)
+
+// <Args> ::= LEFT_PAREN <ArgsList> RIGHT_PAREN
+// Parses the arguments for a function call, handling the surrounding parentheses.
     private parse_args() : AST.Expr[]{
         this.expect(TokenType.LEFT_PAREN, "Expected '('");
         const args = this.at().get_type() == TokenType.RIGHT_PAREN 
@@ -272,6 +291,13 @@ export default class Parser{
         return args;
     }
 
+/*
+
+<ArgsList> ::= <Expr> (COMMA <Expr>)*?
+Parses a list of expressions separated by commas as function arguments.
+    - expr, 
+    - expr, expr, expr
+*/    
     private parse_args_list(): AST.Expr[] {
         const args = [this.parse_assignment_expr()];
 
@@ -281,16 +307,29 @@ export default class Parser{
 
         return args;
     }
-    
-    // <MemberExpr> ::= <PrimaryExpr>
+
+/*
+    <MemberExpr> ::= <PrimaryExpr>
+
+    Currently, a member expression is just redirected to parse a primary expression.
+    Might change if property access or method calls are added.
+
+*/
     private parse_member_expr(): AST.Expr {
         return this.parse_primary_expr();
     }
 
+/*
 
+<PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
 
-    // A primary expression has the HIGHEST order of precedence
-    // <PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
+PrimaryExprs are the simplest forms of expressions:
+    - identifiers, 
+    - numeric literals
+    - parenthesized expressions.
+
+They have the HIGHEST order of precedence
+*/
     private parse_primary_expr() : AST.Expr{
         const token = this.at().get_type();
 
