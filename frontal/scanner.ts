@@ -1,5 +1,9 @@
 import { TokenType, Token } from "./token.ts";
-import { IllegalCharErr } from "../error/lexicalError.ts";
+import { 
+        IllegalCharErr, 
+        InvalidBlckCmntStartErrA, 
+        InvalidBlckCmntStartErrB 
+} from "../error/lexicalError.ts";
 
 declare var Deno: any; // For Deno run environment
 
@@ -8,7 +12,8 @@ const keywords: Record<string, TokenType> = {
 	"let": TokenType.LET,
     //"nil": TokenType.NIL
     "const": TokenType.CONST,
-    "fn" : TokenType.FN
+    "fn" : TokenType.FN,
+    "for": TokenType.FOR
 };
 
 export default class Scanner{
@@ -35,10 +40,9 @@ export default class Scanner{
         return this.srcCode.charAt(this.currentChar - 1);
     }
 
-    private add_token(tokType : TokenType, tokValue : string | number | null, line: number, start: number, end: number) : void{
+    private add_token(tokType : TokenType, tokValue : string | number | null, line: number, column : number, start: number, end: number) : void{
         // rawSourceCode.substr(start, currentChar - start); -> lexeme
-        // this.scannedTokens.push(new Token(tokType, tokValue, this.line, this.column - (this.currentChar - this.start)));
-        this.scannedTokens.push(new Token(tokType, tokValue, line, start, end));
+        this.scannedTokens.push(new Token(tokType, tokValue, line, column, start, end));
     }
 
     //Looks ahead to the next char, but doesn't consume it
@@ -73,7 +77,7 @@ export default class Scanner{
         }
     
         let numberValue : number = parseFloat(this.srcCode.substring(start, this.currentChar));
-        this.add_token(TokenType.NUMBER, numberValue, this.line, start, this.currentChar - 1);
+        this.add_token(TokenType.NUMBER, numberValue, this.line, this.column, start, this.currentChar - 1);
     }
     
 
@@ -92,10 +96,10 @@ export default class Scanner{
         const reserved = keywords[lexeme];
     
         if(typeof reserved === "number") {
-            this.scannedTokens.push(new Token(reserved, lexeme, this.line, this.start, this.currentChar - 1));
+            this.scannedTokens.push(new Token(reserved, lexeme, this.line, this.column, this.start, this.currentChar - 1));
             return;
         }
-        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, lexeme, this.line, this.start, this.currentChar - 1));
+        this.scannedTokens.push(new Token(TokenType.IDENTIFIER, lexeme, this.line, this.column, this.start, this.currentChar - 1));
     }
     
 
@@ -108,6 +112,7 @@ export default class Scanner{
 
     private scan_token() : void{
         let c = this.advance();
+        let blockCommentDepth = 0
         //this.column++;
         switch (c) {
             // Whitespace chars
@@ -127,20 +132,67 @@ export default class Scanner{
                 }
                 break;
 
+            case '#':
+                if(this.is_at_eof()){
+                    let lineContent = this.get_line_content(this.line);
+                    new InvalidBlckCmntStartErrA(this.origin, this.line, this.column, lineContent).printlnError();
+                    Deno.exit(101);
+                }
+
+                if(this.peek() !== '|'){
+                    let lineContent = this.get_line_content(this.line);
+                    new InvalidBlckCmntStartErrB(this.origin, this.line, this.column, lineContent).printlnError();
+                    Deno.exit(101);
+                }
+
+                // consume '{' to finish consuming "!{" 
+                this.advance()
+                
+                blockCommentDepth += 1;
+
+                while(blockCommentDepth > 0){
+                    if(this.peek() == '\n'){
+                        this.line += 1;
+                        this.column = 0;
+                    }
+
+                    this.advance();
+
+                    if(this.peek() == '#' && this.peek_next() == '|'){
+                        this.advance()
+                        this.advance()
+                        blockCommentDepth += 1  
+                    }
+
+                    if(this.peek() == '|' && this.peek_next() == '#'){
+                        this.advance();
+                        this.advance();
+                        blockCommentDepth -= 1;
+                    }
+
+                    if(this.is_at_eof() && blockCommentDepth > 0){
+                        console.error(blockCommentDepth);
+                        console.error("Unterminated block comment");
+                        Deno.exit(101);
+                    }
+                }
+
+                break;
+
             // Single char tokens
             // this.add_token(TokenType.BINARY_OP, this.srcCode.substring(this.start, this.currentChar)); break;
-            case '(': this.add_token(TokenType.LEFT_PAREN, c, this.line, this.start, this.currentChar - 1); break;
-            case ')': this.add_token(TokenType.RIGHT_PAREN, c, this.line, this.start, this.currentChar - 1); break;
-            case '{': this.add_token(TokenType.LEFT_BRACE, c, this.line, this.start, this.currentChar - 1); break;
-            case '}': this.add_token(TokenType.RIGHT_BRACE, c, this.line, this.start, this.currentChar - 1); break;
-            case ',': this.add_token(TokenType.COMMA, c, this.line, this.start, this.currentChar - 1); break;
-            case '=': this.add_token(TokenType.EQUAL, c, this.line, this.start, this.currentChar - 1); break;
-            case ';': this.add_token(TokenType.SEMICOLON, c, this.line, this.start, this.currentChar - 1); break;
+            case '(': this.add_token(TokenType.LEFT_PAREN, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case ')': this.add_token(TokenType.RIGHT_PAREN, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case '{': this.add_token(TokenType.LEFT_BRACE, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case '}': this.add_token(TokenType.RIGHT_BRACE, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case ',': this.add_token(TokenType.COMMA, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case '=': this.add_token(TokenType.EQUAL, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            case ';': this.add_token(TokenType.SEMICOLON, c, this.line, this.column, this.start, this.currentChar - 1); break;
             case '-': 
             case '+':
             case '/':
             case '*': 
-            case '%': this.add_token(TokenType.BINARY_OP, c, this.line, this.start, this.currentChar - 1); break;
+            case '%': this.add_token(TokenType.BINARY_OP, c, this.line, this.column, this.start, this.currentChar - 1); break;
             
 
             default:
@@ -151,8 +203,7 @@ export default class Scanner{
                     this.scan_identifier();
                 }else{
                     let lineContent = this.get_line_content(this.line);
-                    const error = new IllegalCharErr(this.origin, this.line, this.column - 1, c, lineContent);
-                    error.printlnError();
+                    new IllegalCharErr(this.origin, this.line, this.column - 1, c, lineContent).printlnError();
                     Deno.exit(100);
                 }
                 break;
@@ -166,13 +217,13 @@ export default class Scanner{
             this.scan_token();
         }
         
-        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null, this.line, this.currentChar, this.currentChar));
+        this.scannedTokens.push(new Token(TokenType.END_OF_FILE, null, this.line, this.column + 1, this.currentChar + 1, this.currentChar + 1));
         return this.scannedTokens;
     }
 
 };
 
 // Test scanner
-//const lexer = new Scanner(`let x = 45.2 * (4 / 3)`, "programa.april");
+// const lexer = new Scanner(`let x = 45.2 * (4 / 3)`, "programa.april");
 // const lexer = new Scanner("10 - x + y");
-//console.log(lexer.scan_tokens());
+// console.log(lexer.scan_tokens());

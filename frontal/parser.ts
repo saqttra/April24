@@ -6,7 +6,7 @@ import * as AST from "./ast.ts";
 import  Scanner  from "./scanner.ts";
 import { TokenType, Token } from "./token.ts";
 import BaseError from "../error/baseError.ts";
-import { MissingSemicolonErr, InvalidVarDeclErr } from "../error/syntaxError.ts";
+import { MissingSemicolonErr, InvalidVarDeclErr, MissingFnIdenErr, InvalidFnLP, error300 } from "../error/syntaxError.ts";
 
 declare var Deno: any; // For Deno run environment
 
@@ -15,9 +15,14 @@ declare var Deno: any; // For Deno run environment
 export default class Parser{
     private scannedTokens: Token[] = [];
     private origin : string;
+    private current : number = 0;
+    private srcCode: string;
+    private srcCodeLns : string[] = [];
 
-    constructor(origin : string){
-        this.origin = origin
+    constructor(origin : string, srcCode : string){
+        this.origin = origin;
+        this.srcCode = srcCode;
+        this.srcCodeLns = srcCode.split('\n');
     }
 
     private not_eof() : boolean {
@@ -33,11 +38,43 @@ export default class Parser{
         return prevToken;
     }
 
+    private neo_advance() {
+        this.current++;
+        //return this.scannedTokens[this.current - 1];
+    }
+
     private expect(type : TokenType, err : any){
         const prevToken = this.scannedTokens.shift() as Token;
         if(!prevToken || prevToken.get_type() != type){
             console.error("Parser error:\n" + err, prevToken, " - Expecting: ", type);
             Deno.exit(1);
+        }
+        return prevToken;
+    }
+
+    private expect2(type : TokenType, err : any, syntaxErrCode : number, earlierTok? : Token){
+        const prevToken = this.scannedTokens.shift() as Token;
+        if(!prevToken || prevToken.get_type() != type){
+            switch (syntaxErrCode) {
+                case 200:
+                    new MissingFnIdenErr(this.origin, 
+                                         prevToken.get_line(), 
+                                         prevToken.get_column(), 
+                                         prevToken, TokenType[type],
+                                         this.srcCodeLns[prevToken.get_line() - 1]
+                                        ).printlnError();
+                    Deno.exit(200);
+                case 201:
+                    new InvalidFnLP(this.origin, 
+                                    prevToken.get_line(), 
+                                    prevToken.get_column(), 
+                                    prevToken, TokenType[type],
+                                    this.srcCodeLns[prevToken.get_line() - 1]
+                                    ).printlnError();
+                    Deno.exit(201);
+                default:
+                    break;
+            }
         }
         return prevToken;
     }
@@ -50,7 +87,7 @@ export default class Parser{
                                         expectedTok: string ) => BaseError) {
         const prevToken = this.scannedTokens.shift() as Token;
         if (!prevToken || prevToken.get_type() != type) {
-            const error = new ErrorClass(this.origin, prevToken.get_line(), prevToken.get_end(), prevToken, TokenType[type]);
+            const error = new ErrorClass(this.origin, prevToken.get_line(), prevToken.get_column(), prevToken, TokenType[type]);
             error.printlnError();
             Deno.exit(1);
         }
@@ -62,7 +99,7 @@ export default class Parser{
 
         // Pour tokens from scanner into parser
         this.scannedTokens = new Scanner(srcCode, this.origin).scan_tokens();
-        console.log(this.scannedTokens);
+        //console.log(this.scannedTokens);
 
         // <Program> ::= <Statement>*
         const program : AST.Program = {
@@ -84,11 +121,13 @@ export default class Parser{
 
         // <Statement> ::= <FuncDeclaration> | <VarDeclaration> | <Expr>
         switch(this.at().get_type()){ // curr available token
-            case TokenType.LET:
-            case TokenType.CONST:
-                return this.parse_var_declaration();
             case TokenType.FN:
                 return this.parse_fn_declaration();
+            case TokenType.LET:
+            case TokenType.CONST:
+                        return this.parse_var_declaration();
+            case TokenType.FOR: 
+                        return this.parse_for_statement();
             default:
                 return this.parse_expression();
         }
@@ -103,13 +142,14 @@ export default class Parser{
     
 */
     private parse_fn_declaration() : AST.Statement {
-        this.advance(); // consume 'fn' keyword
-        const name = this.expect(
+        this.advance()// consume 'fn' keyword
+        const name = this.expect2(
             TokenType.IDENTIFIER, 
-            "Expected function name following 'fn' keyword."
-        ).get_value();
+            "Expected function name following 'fn' keyword.", 
+            200
+        ).get_value(); // function identifier
 
-        const args = this.parse_args();
+        const args = this.parse_args(); //CHECKPOINT - LAST ERRCODE 200
         const params: string[]  = [];
         for(const arg of args) {
             if(arg.kind !== "Identifier"){
@@ -179,6 +219,43 @@ export default class Parser{
         return declaration;
     }
 
+    private parse_for_statement() : AST.ForStatement {
+        this.advance(); // Consume 'for' token
+    
+        // Asegurar que el siguiente token sea un número
+        const iterationsToken = this.neo_expect(TokenType.NUMBER, InvalidVarDeclErr);
+    
+        // Convertir el valor del token a un entero.
+        const iterationsValue = iterationsToken.get_value();
+        if (typeof iterationsValue !== "number") {
+            throw new Error("For loop iteration count must be a numeric literal.");
+        }
+    
+        // Crear el AST para el número de iteraciones
+        const numIterations = { 
+            kind: "NumericLiteral", 
+            value: iterationsValue 
+        } as AST.NumericLiteral;
+    
+        // Asegurar que se abre con llave '{'
+        this.neo_expect(TokenType.LEFT_BRACE, MissingSemicolonErr);
+    
+        const statements: AST.Statement[] = [];
+    
+        // Mientras no se encuentre una llave de cierre '}', sigue analizando sentencias
+        while(this.at().get_type() !== TokenType.RIGHT_BRACE && this.not_eof()) {
+            statements.push(this.parse_statement());
+        }
+    
+        // Asegurar que se cierre con llave '}'
+        this.neo_expect(TokenType.RIGHT_BRACE, MissingSemicolonErr);
+    
+        return {
+            kind: "ForStatement",
+            iterations: numIterations,
+            body: statements
+        } as AST.ForStatement;
+    }
 
 // <Expr> ::= <AssignmentExpr>
 // Entry point for parsing expressions
@@ -280,7 +357,7 @@ export default class Parser{
 // <Args> ::= LEFT_PAREN <ArgsList> RIGHT_PAREN
 // Parses the arguments for a function call, handling the surrounding parentheses.
     private parse_args() : AST.Expr[]{
-        this.expect(TokenType.LEFT_PAREN, "Expected '('");
+        this.expect2(TokenType.LEFT_PAREN, "Expected '('", 201);
         const args = this.at().get_type() == TokenType.RIGHT_PAREN 
             ? [] : this.parse_args_list();
         
@@ -357,9 +434,10 @@ They have the HIGHEST order of precedence
                 return value;
 
             default:
-                console.error("Unexpected token found during parsing!", this.scannedTokens[0]);
-                Deno.exit(1);
-                return {} as AST.Statement; // To silence compiler warnings.
+                // Safety net for any unsupported tokens that may have passed
+                error300(this.origin, this.scannedTokens[0]);
+                Deno.exit(300);
+                return {} as AST.Statement; // To silence TS compiler warnings.
         }
     }
 }

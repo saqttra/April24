@@ -16,7 +16,7 @@ export enum TokenType{
     // NIL,
 
     // Keywords.
-    LET, CONST, FN,
+    LET, CONST, FN, FOR,
 
     END_OF_FILE,
 };
@@ -25,17 +25,20 @@ export class Token{
     private value: string | number | null;
     private type : TokenType;
     private line: number;
+    private column: number;
     private start: number;
     private end: number;
 
     constructor(type : TokenType, 
                 value : string | number | null,
                 line : number,
+                column : number,
                 start : number, 
                 end : number){
         this.type = type;
         this.value = value;
         this.line = line;
+        this.column = column;
         this.start = start;
         this.end = end;
     }
@@ -45,6 +48,8 @@ export class Token{
     get_type() : TokenType{ return this.type; }
 
     get_line() : number{ return this.line; }
+
+    get_column() : number{ return this.column; }
 
     get_start(): number { return this.start; }
     

@@ -1,0 +1,14 @@
+let N = 10; // Número de términos que quieres calcular
+let a = 0;  // Primer término de la secuencia de Fibonacci
+let b = 1;  // Segundo término de la secuencia de Fibonacci
+let temp;
+
+println(a);
+println(b);
+
+for N-2 {  // Ya hemos impreso los dos primeros términos
+    temp = a + b;
+    a = b;
+    b = temp;
+    println(temp);
+}

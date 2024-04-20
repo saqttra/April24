@@ -1,18 +1,29 @@
-fn add (x, y){
-    let result = x + y;
+#|
 
-    result
+
+    This is a multiline comment 
+
+
+    Ignorado 
+
+    #|
+    
+    Nested comments are allowed
+    
+    
+    |#
+
+|#
+
+
+let a = 0; 
+let b = 1;  
+let temp;
+
+
+for 10 {  @ Ya hemos impreso los dos primeros términos
+    temp = a + b
+    a = b
+    b = temp
+    println(temp)
 }
-
-const result = add(10, 4);
-
-let hello = 10.3333;
-
-println(hello)
-
-hello = hello + 30
-
-println(hello)
-
-
-println(result)

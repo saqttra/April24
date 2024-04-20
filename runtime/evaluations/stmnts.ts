@@ -1,4 +1,4 @@
-import { FuncDeclaration, Program, VarDeclaration } from "../../frontal/ast.ts";
+import { FuncDeclaration, Program, VarDeclaration, ForStatement } from "../../frontal/ast.ts";
 import Environment from "../env.ts";
 import { evaluate } from "../interpreter.ts";
 import { RuntimeValue, NilValue, DEFNIL, FunctionVal } from "../values.ts";
@@ -36,4 +36,17 @@ export function eval_func_declaration(
 
     return env.declare_var(declaration.name, fn, true);
 
+}
+
+export function evaluateForStatement(forStmt: ForStatement, env: Environment): RuntimeValue {
+    const iterations = forStmt.iterations.value; // Asume que iterations es un `NumericLiteral`
+    let lastEval: RuntimeValue | null = null;
+
+    for (let i = 0; i < iterations; i++) {
+        for (const stmt of forStmt.body) {
+            lastEval = evaluate(stmt, env); // Evalúa cada sentencia en el entorno actual
+        }
+    }
+
+    return lastEval!; // Retorna el último valor evaluado, ajusta según la lógica de tu lenguaje
 }

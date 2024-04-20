@@ -7,6 +7,7 @@ export type NodeType =
 | "Program" // Complete program
 | "VarDeclaration"
 | "FuncDeclaration"
+| "ForStatement"
 
 // Expressions: they produce a value
 | "AssignmentExpr"
@@ -64,6 +65,12 @@ export interface FuncDeclaration extends Statement{
     parameters: string[];
     name: string;
     body: Statement[]; // list of statements
+}
+
+export interface ForStatement extends Statement {
+    kind: "ForStatement";
+    iterations: NumericLiteral;
+    body: Statement[];
 }
 
 export interface Expr extends Statement{
