@@ -1,8 +1,8 @@
 import { ValueType, RuntimeValue, NumberValue, NilValue } from "./values.ts";
-import { ForStatement, NodeType, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, Program, VarDeclaration, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
+import { ForStatement, NodeType, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, UnaryExpr, Program, VarDeclaration, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
 import Environment from "./env.ts";
 import { eval_program, eval_var_declaration, eval_func_declaration, evaluateForStatement } from "./evaluations/stmnts.ts";
-import { eval_identifier, eval_binexp, eval_assignment, eval_call_expr } from "./evaluations/exprs.ts";
+import { eval_identifier, eval_binexp, eval_assignment, eval_call_expr, eval_unary_expr } from "./evaluations/exprs.ts";
 
 declare var Deno : any; 
 
@@ -46,6 +46,9 @@ export function evaluate(astNode: Statement, env : Environment): RuntimeValue{
         
         case "BinaryExpr":
             return eval_binexp(astNode as BinaryExpr, env);
+        
+        case "UnaryExpr":
+                return eval_unary_expr(astNode as UnaryExpr, env);
 
         default:
             console.error("Unsupported AST node.", astNode);

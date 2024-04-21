@@ -20,7 +20,9 @@ export type NodeType =
 | "NumericLiteral" // 123
 //| "NilLiteral"
 | "Identifier" // vars, consts, funcs
-| "BinaryExpr"; // involves operators: +, -, *, /, %
+| "BinaryExpr" // involves operators: +, -, *, /, %
+| "UnaryExpr" // involves operators
+| "BooleanLiteral";
 
 
 /*
@@ -133,3 +135,15 @@ export interface NilLiteral extends Expr{
     value: "null";
 }
 */
+
+export interface UnaryExpr extends Expr {
+    kind: "UnaryExpr";
+    operator: string; // '!'
+    operand: Expr;
+}
+
+
+export interface BooleanLiteral extends Expr {
+    kind: "BooleanLiteral";
+    value: boolean;
+}

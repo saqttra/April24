@@ -1,29 +1,7 @@
-#|
+let hello = false && (11 < 1);
+
+println(!hello)
 
 
-    This is a multiline comment 
+@Latest version stable 2.1.0 2:37 AM
 
-
-    Ignorado 
-
-    #|
-    
-    Nested comments are allowed
-    
-    
-    |#
-
-|#
-
-
-let a = 0; 
-let b = 1;  
-let temp;
-
-
-for 10 {  @ Ya hemos impreso los dos primeros términos
-    temp = a + b
-    a = b
-    b = temp
-    println(temp)
-}

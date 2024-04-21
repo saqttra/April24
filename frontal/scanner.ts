@@ -13,7 +13,7 @@ const keywords: Record<string, TokenType> = {
     //"nil": TokenType.NIL
     "const": TokenType.CONST,
     "fn" : TokenType.FN,
-    "for": TokenType.FOR
+    "for": TokenType.FOR,
 };
 
 export default class Scanner{
@@ -186,7 +186,7 @@ export default class Scanner{
             case '{': this.add_token(TokenType.LEFT_BRACE, c, this.line, this.column, this.start, this.currentChar - 1); break;
             case '}': this.add_token(TokenType.RIGHT_BRACE, c, this.line, this.column, this.start, this.currentChar - 1); break;
             case ',': this.add_token(TokenType.COMMA, c, this.line, this.column, this.start, this.currentChar - 1); break;
-            case '=': this.add_token(TokenType.EQUAL, c, this.line, this.column, this.start, this.currentChar - 1); break;
+            // case '=': this.add_token(TokenType.EQUAL, c, this.line, this.column, this.start, this.currentChar - 1); break;
             case ';': this.add_token(TokenType.SEMICOLON, c, this.line, this.column, this.start, this.currentChar - 1); break;
             case '-': 
             case '+':
@@ -194,6 +194,50 @@ export default class Scanner{
             case '*': 
             case '%': this.add_token(TokenType.BINARY_OP, c, this.line, this.column, this.start, this.currentChar - 1); break;
             
+            case '>':
+                if (this.peek() === '=') {
+                    this.advance();
+                    this.add_token(TokenType.GREATER_EQUAL, ">=", this.line, this.column, this.start, this.currentChar - 1);
+                } else {
+                    this.add_token(TokenType.GREATER, ">", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
+            case '<':
+                if (this.peek() === '=') {
+                    this.advance();
+                    this.add_token(TokenType.LESS_EQUAL, "<=", this.line, this.column, this.start, this.currentChar - 1);
+                } else {
+                    this.add_token(TokenType.LESS, "<", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
+            case '=':
+                if (this.peek() === '=') {
+                    this.advance();
+                    this.add_token(TokenType.EQUAL_EQUAL, "==", this.line, this.column, this.start, this.currentChar - 1);
+                } else {
+                    this.add_token(TokenType.EQUAL, "=", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
+            case '!':
+                if (this.peek() === '=') {
+                    this.advance();
+                    this.add_token(TokenType.NOT_EQUAL, "!=", this.line, this.column, this.start, this.currentChar - 1);
+                } else {
+                    this.add_token(TokenType.NOT, "!", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
+            case '&':
+                if (this.peek() === '&') {
+                    this.advance();
+                    this.add_token(TokenType.AND, "&&", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
+            case '|':
+                if (this.peek() === '|') {
+                    this.advance();
+                    this.add_token(TokenType.OR, "||", this.line, this.column, this.start, this.currentChar - 1);
+                }
+                break;
 
             default:
                 // Multichar tokens

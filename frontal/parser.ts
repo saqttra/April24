@@ -267,18 +267,21 @@ export default class Parser{
 
 // <AssignmentExpr> ::= <AdditiveExpr> (EQUAL <Expr>)?
 // Parses an assignment expression, which might just be an additive expression without an assignment.
-    private parse_assignment_expr(): AST.Expr {
-        //const left = this.parse_object_expr();
+private parse_assignment_expr(): AST.Expr {
+    let expr = this.parse_logical_expr();
 
-        const left = this.parse_additive_expr();  // Modificación sugerida
-        // <MemberExpr> EQUAL <Expr>
-        if(this.at().get_type() == TokenType.EQUAL){
-            this.advance(); // pass the '=';
-            const value = this.parse_assignment_expr();
-            return {value, assigne: left, kind: "AssignmentExpr"} as AST.AssignmentExpr;
-        }
-        return left; 
+    if (this.at().get_type() === TokenType.EQUAL) {
+        this.advance(); // Consumir '='
+        const value = this.parse_assignment_expr(); // Recursivamente para asignaciones encadenadas
+        expr = {
+            kind: "AssignmentExpr",
+            assigne: expr,
+            value: value,
+        } as AST.AssignmentExpr;
     }
+
+    return expr;
+}
 
 /*
     <AdditiveExpr> ::= <MultiplicativeExpr> ((PLUS | MINUS | MOD) <MultiplicativeExpr>)*
@@ -302,6 +305,58 @@ export default class Parser{
         return left;
     }
 
+    private parse_logical_expr(): AST.Expr {
+        let expr = this.parse_equality_expr();
+    
+        while (this.at().get_type() === TokenType.AND || this.at().get_type() === TokenType.OR) {
+            const operatorToken = this.advance(); // Consumir operador lógico
+            const rightExpr = this.parse_equality_expr();
+            expr = {
+                kind: "BinaryExpr",
+                left: expr,
+                right: rightExpr,
+                operator: operatorToken.get_value(),
+            } as AST.BinaryExpr;
+        }
+    
+        return expr;
+    }
+    
+    private parse_equality_expr(): AST.Expr {
+        let expr = this.parse_relational_expr();
+    
+        while (this.at().get_type() === TokenType.EQUAL_EQUAL || this.at().get_type() === TokenType.NOT_EQUAL) {
+            const operatorToken = this.advance(); // Consumir operador de igualdad
+            const rightExpr = this.parse_relational_expr();
+            expr = {
+                kind: "BinaryExpr",
+                left: expr,
+                right: rightExpr,
+                operator: operatorToken.get_value(),
+            } as AST.BinaryExpr;
+        }
+    
+        return expr;
+    }
+    
+    private parse_relational_expr(): AST.Expr {
+        let expr = this.parse_additive_expr(); // Comienza con expresiones aditivas
+    
+        while ([TokenType.LESS, TokenType.GREATER, TokenType.LESS_EQUAL, TokenType.GREATER_EQUAL].includes(this.at().get_type())) {
+            const operatorToken = this.advance(); // Consumir operador relacional
+            const rightExpr = this.parse_additive_expr();
+            expr = {
+                kind: "BinaryExpr",
+                left: expr,
+                right: rightExpr,
+                operator: operatorToken.get_value(),
+            } as AST.BinaryExpr;
+        }
+    
+        return expr;
+    }
+    
+    
 
 /*
     <MultiplicativeExpr> ::= <CallMemberExpr> ((MULTIPLY | DIVIDE) <CallMemberExpr>)*
@@ -396,6 +451,19 @@ Parses a list of expressions separated by commas as function arguments.
         return this.parse_primary_expr();
     }
 
+    private parse_unary_expr(): AST.Expr {
+        if (this.at().get_type() === TokenType.NOT) {
+            const operatorToken = this.advance(); // Consumir '!'
+            const operand = this.parse_unary_expr(); // Aplicar recursivamente para soportar múltiples negaciones, como !!true
+            return {
+                kind: "UnaryExpr",
+                operator: operatorToken.get_value(),
+                operand: operand,
+            } as AST.UnaryExpr;
+        }
+        return this.parse_primary_expr(); // Si no hay operador unario, pasa al nivel de precedencia más alto
+    }
+    
 /*
 
 <PrimaryExpr> ::= <Identifier> | <NumericLiteral> | LEFT_PAREN <Expr> RIGHT_PAREN
@@ -407,39 +475,38 @@ PrimaryExprs are the simplest forms of expressions:
 
 They have the HIGHEST order of precedence
 */
-    private parse_primary_expr() : AST.Expr{
-        const token = this.at().get_type();
+private parse_primary_expr(): AST.Expr {
+    const token = this.at();
 
-        switch(token){
-            // <Identifier> ::= IDENTIFIER
-            case TokenType.IDENTIFIER:
-                                             // to avoid infinite loop, the tokens must be consumed
-                                             //                                     ___________|
-                                             //                                    v                
-                return {kind: "Identifier", symbol: this.advance().get_value()} as AST.Identifier;
-            
-            // case TokenType.NIL:
-            //     this.advance(); // consume the null keyword
-            //     return {kind: "NilLiteral", value: "nil"} as AST.NilLiteral;
+    switch (token.get_type()) {
+        case TokenType.IDENTIFIER:
+            const identifierValue = token.get_value();
+            // Asumimos que 'true' y 'false' son los únicos identificadores que se tratan como booleanos
+            if (identifierValue === "true" || identifierValue === "false") {
+                this.advance(); // Consume the identifier
+                // Directamente crea un Identifier AST node, que será resuelto en el entorno
+                return { kind: "Identifier", symbol: identifierValue } as AST.Identifier;
+            }
+            // Para otros identificadores, simplemente procede como antes
+            return { kind: "Identifier", symbol: this.advance().get_value() } as AST.Identifier;
 
-            // <NumericLiteral> ::= NUMBER
-            case TokenType.NUMBER:
-                                            // Already converted to float since scanning; check scanner.ts;
-                return {kind: "NumericLiteral", value: this.advance().get_value()} as AST.NumericLiteral;
-            
-            case TokenType.LEFT_PAREN:
-                this.advance(); // Consume '('
-                const value = this.parse_expression();
-                this.expect(TokenType.RIGHT_PAREN, "Unexpected token inside parenthesized expr. Expected ')'."); // Consume ')'
-                return value;
+        case TokenType.NUMBER:
+            return { kind: "NumericLiteral", value: this.advance().get_value() } as AST.NumericLiteral;
+        
+        case TokenType.NOT:
+            return this.parse_unary_expr();
+        
+        case TokenType.LEFT_PAREN:
+            this.advance(); // Consume '('
+            const expr = this.parse_expression();
+            this.expect(TokenType.RIGHT_PAREN, "Expected ')' after expression");
+            return expr;
 
-            default:
-                // Safety net for any unsupported tokens that may have passed
-                error300(this.origin, this.scannedTokens[0]);
-                Deno.exit(300);
-                return {} as AST.Statement; // To silence TS compiler warnings.
-        }
+        default:
+            throw new Error(`Unexpected token: ${token.get_type()}`);
     }
+}
+
 }
 
 // const parser = new Parser();

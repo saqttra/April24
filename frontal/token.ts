@@ -9,6 +9,18 @@ export enum TokenType{
     SEMICOLON, // ';'
     BINARY_OP, // '+', '-', '*', '/', '%'
 
+    GREATER,
+    LESS,
+    EQUAL_EQUAL,
+    NOT_EQUAL,
+    GREATER_EQUAL,  // Añadir token para '>='
+    LESS_EQUAL,     // Añadir token para '<='
+
+    // Tokens para operadores lógicos
+    AND,            // '&&'
+    OR,             // '||'
+    NOT,             // '!'
+
 
     // Literals.
     IDENTIFIER,
@@ -16,7 +28,7 @@ export enum TokenType{
     // NIL,
 
     // Keywords.
-    LET, CONST, FN, FOR,
+    LET, CONST, FN, FOR, TRUE, FALSE,
 
     END_OF_FILE,
 };
