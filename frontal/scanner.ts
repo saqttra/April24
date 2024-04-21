@@ -14,6 +14,7 @@ const keywords: Record<string, TokenType> = {
     "const": TokenType.CONST,
     "fn" : TokenType.FN,
     "for": TokenType.FOR,
+    "while": TokenType.WHILE
 };
 
 export default class Scanner{

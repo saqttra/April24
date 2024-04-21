@@ -38,11 +38,6 @@ export default class Parser{
         return prevToken;
     }
 
-    private neo_advance() {
-        this.current++;
-        //return this.scannedTokens[this.current - 1];
-    }
-
     private expect(type : TokenType, err : any){
         const prevToken = this.scannedTokens.shift() as Token;
         if(!prevToken || prevToken.get_type() != type){
@@ -94,7 +89,7 @@ export default class Parser{
         return prevToken;
     }
 
-    // Create an AST of type Program
+    // Create an AST of type Program: here our grammaer begins
     public grow_ast(srcCode : string) : AST.Program {
 
         // Pour tokens from scanner into parser
@@ -125,9 +120,11 @@ export default class Parser{
                 return this.parse_fn_declaration();
             case TokenType.LET:
             case TokenType.CONST:
-                        return this.parse_var_declaration();
+                return this.parse_var_declaration();
             case TokenType.FOR: 
-                        return this.parse_for_statement();
+                return this.parse_for_statement();
+            case TokenType.WHILE:
+                return this.parse_while_statement();
             default:
                 return this.parse_expression();
         }
@@ -183,7 +180,7 @@ export default class Parser{
     }
 
 // <VarDeclaration> ::= (LET | CONST) <Identifier> (EQUAL <Expr>)? SEMICOLON
-    parse_var_declaration(): AST.Statement {
+    private parse_var_declaration(): AST.Statement {
         const isConst = this.advance().get_type() == TokenType.CONST;
 
         // Ex: let 20 = 10 --> trigger error
@@ -255,6 +252,29 @@ export default class Parser{
             iterations: numIterations,
             body: statements
         } as AST.ForStatement;
+    }
+
+    private parse_while_statement() : AST.WhileStatement{
+        this.advance(); // Consumir 'while'
+    
+        const condition = this.parse_expression(); // Analiza la condición, que debe ser una expresión booleana
+        
+        this.neo_expect(TokenType.LEFT_BRACE, MissingSemicolonErr); // Esperar '{' antes del cuerpo del bucle
+    
+        const body: AST.Statement[] = [];
+        
+        // Mientras no se encuentre una llave de cierre '}', sigue analizando sentencias
+        while(this.at().get_type() !== TokenType.RIGHT_BRACE && this.not_eof()) {
+            body.push(this.parse_statement());
+        }
+        
+        this.neo_expect(TokenType.RIGHT_BRACE, MissingSemicolonErr); // Asegurarse de cerrar con '}'
+        
+        return {
+            kind: "WhileStatement",
+            condition: condition,
+            body: body
+        } as AST.WhileStatement;
     }
 
 // <Expr> ::= <AssignmentExpr>
@@ -474,39 +494,39 @@ PrimaryExprs are the simplest forms of expressions:
     - parenthesized expressions.
 
 They have the HIGHEST order of precedence
+
 */
-private parse_primary_expr(): AST.Expr {
-    const token = this.at();
+    private parse_primary_expr(): AST.Expr {
+        const token = this.at();
 
-    switch (token.get_type()) {
-        case TokenType.IDENTIFIER:
-            const identifierValue = token.get_value();
-            // Asumimos que 'true' y 'false' son los únicos identificadores que se tratan como booleanos
-            if (identifierValue === "true" || identifierValue === "false") {
-                this.advance(); // Consume the identifier
-                // Directamente crea un Identifier AST node, que será resuelto en el entorno
-                return { kind: "Identifier", symbol: identifierValue } as AST.Identifier;
-            }
-            // Para otros identificadores, simplemente procede como antes
-            return { kind: "Identifier", symbol: this.advance().get_value() } as AST.Identifier;
+        switch (token.get_type()) {
+            case TokenType.IDENTIFIER:
+                const identifierValue = token.get_value();
+                // Asumimos que 'true' y 'false' son los únicos identificadores que se tratan como booleanos
+                if (identifierValue === "true" || identifierValue === "false") {
+                    this.advance(); // Consume the identifier
+                    // Directamente crea un Identifier AST node, que será resuelto en el entorno
+                    return { kind: "Identifier", symbol: identifierValue } as AST.Identifier;
+                }
+                // Para otros identificadores, simplemente procede como antes
+                return { kind: "Identifier", symbol: this.advance().get_value() } as AST.Identifier;
 
-        case TokenType.NUMBER:
-            return { kind: "NumericLiteral", value: this.advance().get_value() } as AST.NumericLiteral;
-        
-        case TokenType.NOT:
-            return this.parse_unary_expr();
-        
-        case TokenType.LEFT_PAREN:
-            this.advance(); // Consume '('
-            const expr = this.parse_expression();
-            this.expect(TokenType.RIGHT_PAREN, "Expected ')' after expression");
-            return expr;
+            case TokenType.NUMBER:
+                return { kind: "NumericLiteral", value: this.advance().get_value() } as AST.NumericLiteral;
+            
+            case TokenType.NOT:
+                return this.parse_unary_expr();
+            
+            case TokenType.LEFT_PAREN:
+                this.advance(); // Consume '('
+                const expr = this.parse_expression();
+                this.expect(TokenType.RIGHT_PAREN, "Expected ')' after expression");
+                return expr;
 
-        default:
-            throw new Error(`Unexpected token: ${token.get_type()}`);
+            default:
+                throw new Error(`Unexpected token: ${token.get_type()}`);
+        }
     }
-}
-
 }
 
 // const parser = new Parser();

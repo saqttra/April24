@@ -1,7 +1,7 @@
-import { FuncDeclaration, Program, VarDeclaration, ForStatement } from "../../frontal/ast.ts";
+import { FuncDeclaration, Program, VarDeclaration, ForStatement, WhileStatement} from "../../frontal/ast.ts";
 import Environment from "../env.ts";
 import { evaluate } from "../interpreter.ts";
-import { RuntimeValue, NilValue, DEFNIL, FunctionVal } from "../values.ts";
+import { RuntimeValue, NilValue, DEFNIL, FunctionVal, BoolValue } from "../values.ts";
 
 // To evaluate a program, it will run top to bottom and return the last evaluated result
 export function eval_program(program: Program, env : Environment): RuntimeValue {
@@ -49,4 +49,23 @@ export function evaluateForStatement(forStmt: ForStatement, env: Environment): R
     }
 
     return lastEval!; // Retorna el último valor evaluado, ajusta según la lógica de tu lenguaje
+}
+
+export function evaluateWhileStatement(whileStmt: WhileStatement, env: Environment): RuntimeValue {
+    let lastEval: RuntimeValue = { type: "nil", value: null } as NilValue;
+
+    while (true) {
+        const conditionResult = evaluate(whileStmt.condition, env);
+
+        // Comprobar que el resultado de la evaluación es un booleano antes de proceder
+        if (conditionResult.type === "bool" && (conditionResult as BoolValue).value) {
+            for (const stmt of whileStmt.body) {
+                lastEval = evaluate(stmt, env);  // Evaluar cada sentencia en el cuerpo del bucle
+            }
+        } else {
+            break; // Si la condición no es un booleano o es false, salir del bucle
+        }
+    }
+
+    return lastEval;  // Retorna el último valor evaluado en el bucle
 }

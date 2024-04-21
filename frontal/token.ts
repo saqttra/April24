@@ -28,7 +28,7 @@ export enum TokenType{
     // NIL,
 
     // Keywords.
-    LET, CONST, FN, FOR, TRUE, FALSE,
+    LET, CONST, FN, FOR, TRUE, FALSE, WHILE,
 
     END_OF_FILE,
 };

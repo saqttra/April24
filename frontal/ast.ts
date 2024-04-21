@@ -3,23 +3,24 @@
 */
 
 export type NodeType =
+| "Program" // Complete program; the seed/root
+
 // Statements: declarations & control flow structures
-| "Program" // Complete program
 | "VarDeclaration"
 | "FuncDeclaration"
 | "ForStatement"
+| "WhileStatement"
 
 // Expressions: they produce a value
 | "AssignmentExpr"
-| "MemberExpr" // Access and object's member: 'object.property'
 | "CallExpr"
+| "BinaryExpr" // involves operators: +, -, *, /, %
+| "UnaryExpr" // involves operators: !
 
+| "Identifier" // vars, consts, funcs
 // Literals: direct values in the src code
 | "NumericLiteral" // 123
 //| "NilLiteral"
-| "Identifier" // vars, consts, funcs
-| "BinaryExpr" // involves operators: +, -, *, /, %
-| "UnaryExpr" // involves operators
 | "BooleanLiteral";
 
 
@@ -73,6 +74,12 @@ export interface ForStatement extends Statement {
     body: Statement[];
 }
 
+export interface WhileStatement extends Statement {
+    kind: "WhileStatement";
+    condition: Expr;
+    body: Statement[];
+}
+
 export interface Expr extends Statement{
     /*
     Expressions return a value, they evaluate.
@@ -84,16 +91,16 @@ export interface Expr extends Statement{
     */
 }
 
-/*
-    x = {foo: 42, bar: 23};
-    x.foo = 43; // The left side is no longer an identifier, but an expression.
-    x.bar.foo = 3;
-    x[22] = 1;
-*/
 export interface AssignmentExpr extends Expr{
     kind: "AssignmentExpr";
     assigne: Expr;
     value: Expr;
+}
+
+export interface CallExpr extends Expr {
+    kind: "CallExpr";
+    args: Expr[]; // args passed to the function
+    caller: Expr; // expression called
 }
 
 // Ex: 10 - 5 -> value = 5; var1 + var2 = x; -> value = x
@@ -104,18 +111,11 @@ export interface BinaryExpr extends Expr {
     operator: string; // needs to be of type BinaryOperator
 }
 
-export interface CallExpr extends Expr {
-    kind: "CallExpr";
-    args: Expr[]; // args passed to the function
-    caller: Expr; // expression called
+export interface UnaryExpr extends Expr {
+    kind: "UnaryExpr";
+    operator: string; // '!'
+    operand: Expr;
 }
-
-// export interface MemberExpr extends Expr {
-//     kind: "MemberExpr";
-//     object: Expr;
-//     property: Expr;
-//     computed: boolean;
-// }
 
 export interface Identifier extends Expr{
     kind : "Identifier";
@@ -133,13 +133,6 @@ export interface NilLiteral extends Expr{
     value: "null";
 }
 */
-
-export interface UnaryExpr extends Expr {
-    kind: "UnaryExpr";
-    operator: string; // '!'
-    operand: Expr;
-}
-
 
 export interface BooleanLiteral extends Expr {
     kind: "BooleanLiteral";

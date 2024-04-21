@@ -1,7 +1,14 @@
 let hello = false && (11 < 1);
 
 println(!hello)
+println(hello)
 
 
 @Latest version stable 2.1.0 2:37 AM
 
+let mio = 11;
+
+while (88 == mio) {
+    println(mio)
+    @mio = mio - 1
+}
