@@ -6,7 +6,6 @@ export type ValueType =
 | "nil" 
 | "number" 
 | "bool"  
-| "object" 
 | "std-function"
 | "function";
 
@@ -27,11 +26,6 @@ export interface NumberValue extends RuntimeValue {
 export interface BoolValue extends RuntimeValue {
     type: "bool";
     value: boolean;
-}
-
-export interface ObjectValue extends RuntimeValue {
-    type: "object";
-    properties: Map<string, RuntimeValue>;
 }
 
 export function DEFNIL(){

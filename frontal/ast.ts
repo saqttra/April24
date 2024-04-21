@@ -15,8 +15,6 @@ export type NodeType =
 | "CallExpr"
 
 // Literals: direct values in the src code
-//| "ObjectLiteral" // {key: value}
-| "Property" // A proerty inside an object literal
 | "NumericLiteral" // 123
 //| "NilLiteral"
 | "Identifier" // vars, consts, funcs
@@ -112,12 +110,12 @@ export interface CallExpr extends Expr {
     caller: Expr; // expression called
 }
 
-export interface MemberExpr extends Expr {
-    kind: "MemberExpr";
-    object: Expr;
-    property: Expr;
-    computed: boolean;
-}
+// export interface MemberExpr extends Expr {
+//     kind: "MemberExpr";
+//     object: Expr;
+//     property: Expr;
+//     computed: boolean;
+// }
 
 export interface Identifier extends Expr{
     kind : "Identifier";
