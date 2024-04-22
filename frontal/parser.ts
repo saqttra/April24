@@ -125,6 +125,8 @@ export default class Parser{
                 return this.parse_for_statement();
             case TokenType.WHILE:
                 return this.parse_while_statement();
+            case TokenType.IF:
+                return this.parse_if_statement();
             default:
                 return this.parse_expression();
         }
@@ -276,6 +278,50 @@ export default class Parser{
             body: body
         } as AST.WhileStatement;
     }
+
+    private parse_if_statement(): AST.IfStatement {
+        this.advance(); // Consumir 'if'
+    
+        this.neo_expect(TokenType.LEFT_PAREN, MissingSemicolonErr); // Esperar '(' después de 'if'
+        const condition = this.parse_expression(); // Analiza la condición
+        this.neo_expect(TokenType.RIGHT_PAREN, MissingSemicolonErr); // Esperar ')' después de la condición
+    
+        this.neo_expect(TokenType.LEFT_BRACE, MissingSemicolonErr); // Esperar '{' antes del cuerpo del 'if'
+        const consequence: AST.Statement[] = [];
+    
+        // Analizar sentencias dentro del cuerpo del 'if'
+        while (this.at().get_type() !== TokenType.RIGHT_BRACE && this.not_eof()) {
+            consequence.push(this.parse_statement());
+        }
+    
+        this.neo_expect(TokenType.RIGHT_BRACE, MissingSemicolonErr); // Esperar '}' después del cuerpo del 'if'
+    
+        let alternative: AST.Statement[] | undefined;
+    
+        // Verificar si existe un 'else' y analizarlo
+        if (this.at().get_type() === TokenType.ELSE) {
+            this.advance(); // Consumir 'else'
+            
+            this.neo_expect(TokenType.LEFT_BRACE, MissingSemicolonErr); // Esperar '{' antes del cuerpo del 'else'
+            alternative = [];
+            
+            while (this.at().get_type() !== TokenType.RIGHT_BRACE && this.not_eof()) {
+                alternative.push(this.parse_statement());
+            }
+            
+            this.neo_expect(TokenType.RIGHT_BRACE, MissingSemicolonErr); // Esperar '}' después del cuerpo del 'else'
+        }
+    
+        return {
+            kind: "IfStatement",
+            condition: condition,
+            consequence: consequence,
+            alternative: alternative
+        } as AST.IfStatement;
+    }
+    
+    
+
 
 // <Expr> ::= <AssignmentExpr>
 // Entry point for parsing expressions

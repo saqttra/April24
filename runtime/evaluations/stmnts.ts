@@ -1,4 +1,4 @@
-import { FuncDeclaration, Program, VarDeclaration, ForStatement, WhileStatement} from "../../frontal/ast.ts";
+import { FuncDeclaration, Program, VarDeclaration, ForStatement, WhileStatement, IfStatement} from "../../frontal/ast.ts";
 import Environment from "../env.ts";
 import { evaluate } from "../interpreter.ts";
 import { RuntimeValue, NilValue, DEFNIL, FunctionVal, BoolValue } from "../values.ts";
@@ -68,4 +68,27 @@ export function evaluateWhileStatement(whileStmt: WhileStatement, env: Environme
     }
 
     return lastEval;  // Retorna el último valor evaluado en el bucle
+}
+
+export function evaluateIfStatement(ifStmt: IfStatement, env: Environment): RuntimeValue {
+    const conditionResult = evaluate(ifStmt.condition, env);
+
+    // Comprobar que el resultado de la evaluación es un booleano antes de proceder
+    if (conditionResult.type === "bool" && (conditionResult as BoolValue).value) {
+        // Ejecutar el bloque de consecuencias si la condición es verdadera
+        let lastEval: RuntimeValue = DEFNIL();
+        for (const stmt of ifStmt.consequence) {
+            lastEval = evaluate(stmt, env);  // Evaluar cada sentencia en el bloque de consecuencias
+        }
+        return lastEval;
+    } else if (ifStmt.alternative) {
+        // Ejecutar el bloque alternativo si hay uno y la condición es falsa
+        let lastEval: RuntimeValue = DEFNIL();
+        for (const stmt of ifStmt.alternative) {
+            lastEval = evaluate(stmt, env);  // Evaluar cada sentencia en el bloque alternativo
+        }
+        return lastEval;
+    }
+
+    return DEFNIL(); // Si no hay bloque alternativo y la condición es falsa, retorna nil
 }

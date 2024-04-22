@@ -1,7 +1,7 @@
 import { RuntimeValue, NumberValue, NilValue } from "./values.ts";
-import { ForStatement, WhileStatement, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, UnaryExpr, Program, VarDeclaration, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
+import { ForStatement, WhileStatement, IfStatement, Statement, AssignmentExpr, NumericLiteral, Identifier, BinaryExpr, UnaryExpr, Program, VarDeclaration, CallExpr, FuncDeclaration} from "../frontal/ast.ts";
 import Environment from "./env.ts";
-import { eval_program, eval_var_declaration, eval_func_declaration, evaluateForStatement, evaluateWhileStatement } from "./evaluations/stmnts.ts";
+import { eval_program, eval_var_declaration, eval_func_declaration, evaluateForStatement, evaluateWhileStatement, evaluateIfStatement } from "./evaluations/stmnts.ts";
 import { eval_identifier, eval_binexp, eval_assignment, eval_call_expr, eval_unary_expr } from "./evaluations/exprs.ts";
 
 declare var Deno : any; 
@@ -24,6 +24,9 @@ export function evaluate(astNode: Statement, env : Environment): RuntimeValue{
 
         case "WhileStatement":  // Añadir caso para WhileStatement
             return evaluateWhileStatement(astNode as WhileStatement, env);
+
+        case "IfStatement":
+            return evaluateIfStatement(astNode as IfStatement, env);
 
         // Handle Expressions
         case "AssignmentExpr":

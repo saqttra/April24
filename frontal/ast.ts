@@ -10,6 +10,7 @@ export type NodeType =
 | "FuncDeclaration"
 | "ForStatement"
 | "WhileStatement"
+| "IfStatement"
 
 // Expressions: they produce a value
 | "AssignmentExpr"
@@ -78,6 +79,13 @@ export interface WhileStatement extends Statement {
     kind: "WhileStatement";
     condition: Expr;
     body: Statement[];
+}
+
+export interface IfStatement extends Statement {
+    kind: "IfStatement";
+    condition: Expr;         // La condición para ejecutar el if
+    consequence: Statement[]; // Cuerpo del if
+    alternative?: Statement[]; // Cuerpo del else (opcional)
 }
 
 export interface Expr extends Statement{
